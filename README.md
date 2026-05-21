@@ -63,7 +63,69 @@ npm run dev
 
 Frontend runs on `http://localhost:3000`
 
-## Deployment on Railway
+## Deployment on Vercel
+
+### Prerequisites
+- GitHub account (code already pushed to https://github.com/reallvaibhav/TaskManager.git)
+- MongoDB Atlas account (for cloud database)
+- Vercel account (free tier available)
+
+### Step 1: Set Up MongoDB Atlas
+
+1. Go to [mongodb.com/cloud/atlas](https://mongodb.com/cloud/atlas)
+2. Create a free account or login
+3. Create a new project and cluster (free M0 tier)
+4. In "Database Access", create a database user (username/password)
+5. In "Network Access", add IP 0.0.0.0/0 (allow all IPs)
+6. Click "Connect" and copy the connection string
+7. Replace `<username>`, `<password>`, and `<database>` in the connection string
+
+Example: `mongodb+srv://username:password@cluster.mongodb.net/taskmanager`
+
+### Step 2: Deploy to Vercel
+
+1. Go to [vercel.com](https://vercel.com) and sign in with GitHub
+2. Click "Add New..." → "Project"
+3. Import your GitHub repository: `reallvaibhav/TaskManager`
+4. Select "Other" as framework (since it's a custom full-stack app)
+5. In "Root Directory", leave it empty (uses root)
+6. In "Build Settings":
+   - Build Command: `cd frontend && npm install && npm run build`
+   - Output Directory: `frontend/dist`
+   - Install Command: `npm install`
+
+7. In "Environment Variables", add:
+   - `MONGO_URI`: Your MongoDB connection string
+   - `JWT_SECRET`: Generate a secure key (min 32 characters)
+
+8. Click "Deploy" and wait for the build to complete
+
+### Step 3: Verify Deployment
+
+1. After successful deployment, Vercel provides a live URL (e.g., `https://task-manager-xyz.vercel.app`)
+2. Visit the URL in your browser
+3. Test the application:
+   - Register a new user
+   - Login
+   - Create a project
+   - Create a task
+   - Update task status
+
+### Live URL Format
+
+Your deployed app will be at: `https://[your-project-name].vercel.app`
+
+### Environment Variables Setup
+
+Vercel automatically provides these to serverless functions at `/api/*`:
+- `MONGO_URI` - MongoDB connection string (required)
+- `JWT_SECRET` - JWT signing secret (required)
+
+These are NOT needed in frontend .env (handled by Vercel backend)
+
+---
+
+## Local Development (Old Setup)
 
 ### Step 1: Push to GitHub
 
@@ -134,72 +196,29 @@ git push -u origin main
 ## Troubleshooting
 
 ### MongoDB connection failed
-- Ensure MongoDB is running
-- Check MONGO_URI in `.env`
-- Verify IP whitelist on MongoDB Atlas
+- Ensure MongoDB connection string is correct
+- Check `MONGO_URI` environment variable in Vercel dashboard
+- Verify IP whitelist is set to 0.0.0.0/0 on MongoDB Atlas
+- Ensure database user credentials are correct
 
-### Token invalid
-- Clear browser localStorage
+### Token invalid / Login fails
+- Clear browser localStorage: Press F12 → Application → localStorage → clear
 - Log out and log back in
-- Verify JWT_SECRET is set
+- Verify `JWT_SECRET` is set in Vercel environment variables
+- Check browser console for error messages
+
+### API calls failing / 401 errors
+- Verify frontend can reach backend (check Network tab in DevTools)
+- Ensure JWT token is being sent in Authorization header
+- Verify backend environment variables are set correctly
+- Check Vercel deployment logs for backend errors
 
 ### CORS errors
-- Check backend CORS is enabled
-- Verify VITE_API_URL is correct
-- Ensure frontend/backend URLs match
+- All requests go through same Vercel domain, CORS is pre-configured
+- If errors persist, check browser console for actual error message
 
-### API calls failing
-- Verify backend is running (`npm run dev`)
-- Check browser console for errors
-- Confirm authentication token exists
+### Frontend shows "Cannot GET /"
+- Ensure `vercel.json` is configured correctly
+- Check that build output directory is set to `frontend/dist`
+- Verify frontend build succeeded in Vercel logs
 
-## Deployment (Railway)
-
-### Step 1: Push to GitHub
-```bash
-git init
-git add .
-git commit -m "Initial commit"
-git remote add origin https://github.com/YOUR_USERNAME/team-task-manager.git
-git push -u origin main
-```
-
-### Step 2: Deploy Backend on Railway
-1. Go to [railway.app](https://railway.app) → New Project → Deploy from GitHub
-2. Select your repo → choose the `backend` folder as root
-3. Add environment variables: `MONGO_URI`, `JWT_SECRET`
-4. Railway auto-detects Node.js and runs `npm start`
-5. Copy the public URL (e.g. `https://team-task-manager-backend.up.railway.app`)
-
-### Step 3: Deploy Frontend on Railway
-1. New service in same project → select repo → choose `frontend` folder
-2. Add env variable: `VITE_API_URL=https://your-backend-url.railway.app/api`
-3. Set build command: `npm run build`
-4. Set start command: `npx serve dist`
-5. Done!
-
----
-
-## Features
-
-- **User Auth** — JWT-based login/signup with hashed passwords (bcrypt)
-- **Role-Based Access** — Admins create/delete tasks; Members can only update status
-- **Project Management** — Create projects, add/remove members by email
-- **Task Management** — Title, description, due date, priority (Low/Medium/High), status, assignment
-- **Dashboard** — Total tasks, by status, overdue count, tasks per user
-- **Overdue Detection** — Visual warnings on tasks past due date
-
----
-
-## Database Schema
-
-```
-User: { name, email, password(hashed) }
-
-Project: { name, description, admin(ref:User), members([ref:User]) }
-
-Task: {
-  title, description, dueDate, priority, status,
-  project(ref:Project), assignedTo(ref:User), createdBy(ref:User)
-}
-```
